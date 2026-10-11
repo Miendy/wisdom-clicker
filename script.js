@@ -895,6 +895,7 @@ let hareldBoostEnd = 0, hareldBoostMul = 1;
 let insight = 0, insightEarned = 0, insightSpent = 0, insightPurchases = {}, prestigeCount = 0;
 let classId = null, pendingClassId = null;
 let dailyCompletedDate = "";
+let goldenAtLastPrestige = 0;
 
 const CLASSES = {
   pouncing: { icon: "🐾", name: "Pouncing Scholar", desc: "For active players", click: 1.5, sec: 0.5, offline: 1, offlineCap: 8 },
@@ -921,6 +922,7 @@ function load() {
     owned = ups.map((_, i) => (s.owned && s.owned[i]) || 0);
     classId = CLASSES[s.classId] ? s.classId : null;
     dailyCompletedDate = s.dailyCompletedDate || "";
+    goldenAtLastPrestige = s.goldenAtLastPrestige || 0;
     insight = s.insight || 0;
     prestigeCount = s.prestigeCount != null ? s.prestigeCount : (s.insight > 0 || s.insightEarned > 0 || s.insightSpent > 0 ? 1 : 0);
     if (s.insightEarned != null) { insightEarned = s.insightEarned; insightSpent = s.insightSpentNew || 0; insightPurchases = s.insightPurchases || {}; }
@@ -930,7 +932,7 @@ function load() {
 
 function save() {
   if (resetting) return;
-  try { localStorage.setItem(KEY, JSON.stringify({ bank, earned, mult, bossLevel, owned, msIdx, insight, insightEarned, insightSpentNew: insightSpent, insightPurchases, prestigeCount, classId, dailyCompletedDate })); } catch (e) { return; }
+  try { localStorage.setItem(KEY, JSON.stringify({ bank, earned, mult, bossLevel, owned, msIdx, insight, insightEarned, insightSpentNew: insightSpent, insightPurchases, prestigeCount, classId, dailyCompletedDate, goldenAtLastPrestige })); } catch (e) { return; }
 }
 
 const ACHS = [
@@ -1330,8 +1332,7 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { sav
 window.addEventListener("beforeunload", () => { save(); recordSeen(); });
 setInterval(recordSeen, 15000);
 
-const GOLDENS_PER_INSIGHT = 3;
-function insightGain() { return Math.floor(Math.sqrt(goldenTotal / GOLDENS_PER_INSIGHT)); }
+function insightGain() { return Math.max(0, goldenTotal - goldenAtLastPrestige); }
 
 function updatePrestigeButton() {
   const el = document.getElementById("prestige");
@@ -1342,8 +1343,8 @@ function updatePrestigeButton() {
   el.hidden = false;
   if (!window._prestigePinged) { window._prestigePinged = true; pushBanner("transcend", "Transcend ready", "You may take the Great Nap.", () => {}); }
   const nextTier = gain + 1;
-  const needForNext = nextTier * nextTier * GOLDENS_PER_INSIGHT;
-  const closeness = goldenTotal / needForNext;
+  const needForNext = goldenAtLastPrestige + nextTier;
+  const closeness = (goldenTotal - goldenAtLastPrestige) / nextTier;
   const isHot = closeness > 0.8;
   el.classList.toggle("hot", isHot);
   if (isHot) { const remainPct = Math.round((1 - closeness) * 100); sub.innerHTML = `+${gain} Insight · +${gain * 10}% forever<br><em>${remainPct}% to +${nextTier} Insight · catch more goldens</em>`; }
@@ -1401,6 +1402,7 @@ function doPrestige() {
     classId = pendingClassId;
   }
   insight += gain; prestigeCount += 1; lifetimeInsight += gain; insightEarned += gain;
+  goldenAtLastPrestige = goldenTotal;
   bank = 0; earned = 0; mult = 1; bossLevel = 0;
   owned = ups.map(() => 0);
   clicks = 0; boostEnd = 0;
@@ -1911,6 +1913,12 @@ const TUT_CHAPTERS = {
   tree: { steps: [
     { target: "#insightBtn", text: "Ahh. The Wisdom Tree. A constellation of permanent boons. Click any glowing star to purchase it with Insight.", advance: "click", position: "right" },
     { target: "#insightBtn", text: "Insight is precious. Do not spend it... recklessly. A-hem. Enjoy the stars.", advance: "next", position: "right" }
+  ]},
+  golden: { steps: [
+    { target: null, text: "Professor Mittens here. That golden tangerine was not merely decorative. Each one grants a temporary buff and adds +1 pending Insight.", advance: "next" },
+    { target: "#prestige", text: "Catch enough golden tangerines and the Transcend button will become ready. Transcending converts your pending Insight into permanent Insight.", advance: "next", position: "above" },
+    { target: null, text: "After your first Transcend, the Wisdom Tree opens. Spend permanent Insight there on branches that improve your clicking, passive income, offline earnings, and golden tangerine chances.", advance: "next" },
+    { target: null, text: "Start with Golden Nose and Keen Eye if you want more tangerines. More tangerines mean more buffs, more Insight, and more reasons to nap. Quite elegant, really.", advance: "next" }
   ]}
 };
 
@@ -2554,6 +2562,9 @@ function grantGolden(el) {
   const rolls = treeBought("luck3") ? 2 : 1;
   for (let k = 0; k < rolls; k++) grantGoldenReward(el, k === 0);
   render(); save();
+  if (!tutState.seen.golden && !tutState.active && !fighting && !vnBusy) {
+    setTimeout(() => tutStartChapter("golden"), 500);
+  }
 }
 
 function grantGoldenReward(el, showFloat) {
