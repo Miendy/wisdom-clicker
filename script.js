@@ -846,12 +846,29 @@ const layout = document.querySelector(".layout");
 const tab = document.getElementById("tab");
 const hint = document.getElementById("hint");
 const reward = document.getElementById("reward");
+const classBadge = document.getElementById("classBadge");
+const classBadgeIcon = document.getElementById("classBadgeIcon");
+const classBadgeName = document.getElementById("classBadgeName");
+const classBadgeDesc = document.getElementById("classBadgeDesc");
+const buyMaxBtn = document.getElementById("buyMax");
+const dailyCard = document.getElementById("dailyCard");
+const dailyTitle = document.getElementById("dailyTitle");
+const dailyProgress = document.getElementById("dailyProgress");
+const dailyReward = document.getElementById("dailyReward");
 
 let bank = 0, earned = 0, mult = 1, bossLevel = 0;
 let owned = ups.map(() => 0);
 let clicks = 0, instant = false, msIdx = 0, boostEnd = 0;
 let hareldBoostEnd = 0, hareldBoostMul = 1;
 let insight = 0, insightEarned = 0, insightSpent = 0, insightPurchases = {}, prestigeCount = 0;
+let classId = null, pendingClassId = null;
+let dailyCompletedDate = "";
+
+const CLASSES = {
+  pouncing: { icon: "🐾", name: "Pouncing Scholar", desc: "For active players", click: 1.5, sec: 0.5, offline: 1, offlineCap: 8 },
+  dreaming: { icon: "💤", name: "Dreaming Sage", desc: "For idle players", click: 0.5, sec: 1.5, offline: 1, offlineCap: 8 },
+  watcher: { icon: "🌙", name: "Night Watcher", desc: "For players who return later", click: 1, sec: 1, offline: 2, offlineCap: 24 }
+};
 
 const units = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg"];
 function fmt(n) {
@@ -870,6 +887,8 @@ function load() {
     bank = s.bank || 0; earned = s.earned || 0; mult = s.mult || 1;
     bossLevel = s.bossLevel || 0; msIdx = s.msIdx || 0;
     owned = ups.map((_, i) => (s.owned && s.owned[i]) || 0);
+    classId = CLASSES[s.classId] ? s.classId : null;
+    dailyCompletedDate = s.dailyCompletedDate || "";
     insight = s.insight || 0;
     prestigeCount = s.prestigeCount != null ? s.prestigeCount : (s.insight > 0 || s.insightEarned > 0 || s.insightSpent > 0 ? 1 : 0);
     if (s.insightEarned != null) { insightEarned = s.insightEarned; insightSpent = s.insightSpentNew || 0; insightPurchases = s.insightPurchases || {}; }
@@ -879,7 +898,7 @@ function load() {
 
 function save() {
   if (resetting) return;
-  try { localStorage.setItem(KEY, JSON.stringify({ bank, earned, mult, bossLevel, owned, msIdx, insight, insightEarned, insightSpentNew: insightSpent, insightPurchases, prestigeCount })); } catch (e) { return; }
+  try { localStorage.setItem(KEY, JSON.stringify({ bank, earned, mult, bossLevel, owned, msIdx, insight, insightEarned, insightSpentNew: insightSpent, insightPurchases, prestigeCount, classId, dailyCompletedDate })); } catch (e) { return; }
 }
 
 const ACHS = [
@@ -942,10 +961,12 @@ function resumeToasts() { toastList.forEach((el) => armToast(el, el._left)); }
 toasts.addEventListener("mouseenter", pauseToasts);
 toasts.addEventListener("mouseleave", resumeToasts);
 
-function toast(name, desc) {
+function toast(name, desc, kind = "ach") {
   const el = document.createElement("div");
   el.className = "toast";
-  el.innerHTML = `<span class="tico">🏆</span><div class="tbody"><small class="tlabel">Achievement unlocked<i>now</i></small><b></b><span class="tdesc"></span></div>`;
+  const icons = { ach: "🏆", silly: "😼", golden: "🍊", story: "📖", hareld: "🐰", transcend: "✨", daily: "📅" };
+  const labels = { ach: "Achievement unlocked", silly: "Silly Cat", golden: "Gift", story: "Story", hareld: "Hareld", transcend: "System", daily: "Daily Wisdom" };
+  el.innerHTML = `<span class="tico">${icons[kind] || "🔔"}</span><div class="tbody"><small class="tlabel">${labels[kind] || "Notification"}<i>now</i></small><b></b><span class="tdesc"></span></div>`;
   el.querySelector("b").textContent = name;
   el.querySelector(".tdesc").textContent = desc;
   toastList.forEach((o) => armToast(o, Math.max(4500, o._left - (performance.now() - o._t0))));
@@ -954,7 +975,8 @@ function toast(name, desc) {
   layoutToasts();
   armToast(el, 8000);
   el.addEventListener("click", () => dismissToast(el));
-  pushBanner("ach", name, desc, () => { renderAchPanel(); achModal.hidden = false; });
+  addPhoneNotif(kind, name);
+  if (kind === "ach") el.addEventListener("click", () => { renderAchPanel(); achModal.hidden = false; });
   sfx("buy");
 }
 
@@ -1177,11 +1199,14 @@ function computeOffline() {
   if (!lastSeen) return null;
   const away = Math.min(Date.now() - lastSeen, offlineCapMs());
   if (away < 60000) return null;
+  const activeClass = classId ? CLASSES[classId] : null;
   const rate = perSec();
   if (rate <= 0) return null;
   const dreamBonus = treeBought("sleep3") ? 2 : 1;
-  const gain = rate * (away / 1000) * dreamBonus;
-  return { away, gain };
+  const classCap = activeClass ? activeClass.offlineCap * 3600 * 1000 : 0;
+  const cappedAway = Math.min(away, classCap || away);
+  const gain = rate * (cappedAway / 1000) * dreamBonus * (activeClass ? activeClass.offline : 1);
+  return { away: cappedAway, gain };
 }
 
 function showOffline(gain, away) {
@@ -1222,12 +1247,51 @@ function openPrestigeModal() {
   if (gain < 1) return;
   const next = insight + gain; const nextBonus = next * 10;
   document.getElementById("ptext").innerHTML = `You will gain <b>+${gain} Insight</b>.<br>Total Insight: <b>${next}</b> → <b>+${nextBonus}%</b> wisdom forever.<br><br>You will lose: wisdom, upgrades, boss level, and the ×boss bonus.<br>You will keep: achievements, Insight.`;
+  const first = !classId;
+  const choice = document.getElementById("classChoice");
+  const yes = document.getElementById("pyes");
+  if (first) {
+    pendingClassId = null;
+    renderClassChoices();
+    choice.hidden = false;
+    yes.textContent = "Choose a class first";
+    yes.disabled = true;
+  } else {
+    choice.hidden = true;
+    yes.textContent = "Transcend";
+    yes.disabled = false;
+  }
   document.getElementById("pmodal").hidden = false;
+}
+
+function renderClassChoices() {
+  const grid = document.getElementById("classGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  Object.entries(CLASSES).forEach(([id, info]) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "class-card" + (pendingClassId === id ? " selected" : "");
+    card.innerHTML = `<span class="class-icon">${info.icon}</span><b>${info.name}</b><small>${info.desc}</small><em>Click ×${info.click} · Passive ×${info.sec}<br>Offline ×${info.offline} · ${info.offlineCap}h cap</em>`;
+    card.addEventListener("click", () => {
+      pendingClassId = id;
+      grid.querySelectorAll(".class-card").forEach((el) => el.classList.toggle("selected", el === card));
+      const yes = document.getElementById("pyes");
+      yes.textContent = "Transcend as " + info.name;
+      yes.disabled = false;
+      sfx("blip", { pitch: 1000 });
+    });
+    grid.appendChild(card);
+  });
 }
 
 function doPrestige() {
   const gain = insightGain();
   if (gain < 1) return;
+  if (!classId) {
+    if (!pendingClassId) return;
+    classId = pendingClassId;
+  }
   insight += gain; prestigeCount += 1; lifetimeInsight += gain; insightEarned += gain;
   bank = 0; earned = 0; mult = 1; bossLevel = 0;
   owned = ups.map(() => 0);
@@ -1238,6 +1302,7 @@ function doPrestige() {
   save(); sfx("win"); render(); replay(wis.parentElement, "landed"); updatePrestigeButton();
   const text = `Welcome back, wise one. You carry ${insight} Insight.`;
   live.textContent = text; type(text); replay(bubble, "hit"); renderAchCount();
+  pendingClassId = null;
 }
 
 document.getElementById("prestige").addEventListener("click", () => { sfx("blip", { pitch: 1100 }); openPrestigeModal(); });
@@ -1289,11 +1354,48 @@ function baseSecFlat() {
   return flat;
 }
 
-const perClick = () => baseClickFlat() * mult * boostMul() * achMul.all * achMul.click * insightMul() * comboMult();
-const perSec = () => baseSecFlat() * mult * boostMul() * achMul.all * insightMul();
+function activeClass() { return classId ? CLASSES[classId] : null; }
+const perClick = () => baseClickFlat() * mult * boostMul() * achMul.all * achMul.click * insightMul() * comboMult() * (activeClass() ? activeClass().click : 1);
+const perSec = () => baseSecFlat() * mult * boostMul() * achMul.all * insightMul() * (activeClass() ? activeClass().sec : 1);
 const bossNeed = () => 2000 * 8 ** bossLevel;
 
-function offlineCapMs() { if (treeBought("sleep2")) return 24 * 3600 * 1000; if (treeBought("sleep1")) return 16 * 3600 * 1000; return 8 * 3600 * 1000; }
+const DAILY_CHALLENGES = [
+  { title: "Make 100 clicks", target: 100, metric: () => lifetimeClicks, progress: (target) => Math.min(target, lifetimeClicks) },
+  { title: "Earn 50K wisdom", target: 50000, metric: () => lifetimeEarned, progress: (target) => Math.min(target, lifetimeEarned) },
+  { title: "Catch a Golden Tangerine", target: 1, metric: () => goldenTotal, progress: (target) => Math.min(target, goldenTotal) },
+  { title: "Reach a ×15 combo", target: 15, metric: () => achFlags.bestCombo, progress: (target) => Math.min(target, achFlags.bestCombo) },
+  { title: "Win a boss fight", target: 1, metric: () => bossesWon, progress: (target) => Math.min(target, bossesWon) }
+];
+
+function dailyDate() { return new Date().toISOString().slice(0, 10); }
+function dailyChallenge() {
+  const date = dailyDate();
+  const seed = date.split("-").reduce((sum, part) => sum + Number(part), 0);
+  return DAILY_CHALLENGES[seed % DAILY_CHALLENGES.length];
+}
+function updateDailyChallenge() {
+  if (!dailyCard) return;
+  const challengeOfDay = dailyChallenge();
+  const date = dailyDate();
+  const progress = challengeOfDay.progress(challengeOfDay.target);
+  const complete = dailyCompletedDate === date;
+  if (!complete && challengeOfDay.metric() >= challengeOfDay.target) {
+    dailyCompletedDate = date;
+    const rewardAmount = Math.max(1000, Math.ceil(perClick() * 25));
+    earn(rewardAmount);
+    toast("Daily wisdom complete", `+${fmt(rewardAmount)} wisdom`, "daily");
+    save();
+  }
+  dailyCard.hidden = false;
+  dailyTitle.textContent = challengeOfDay.title;
+  dailyProgress.textContent = complete || dailyCompletedDate === date ? "Complete ✓" : `${fmt(progress)} / ${fmt(challengeOfDay.target)}`;
+  dailyReward.textContent = complete || dailyCompletedDate === date ? "Come back tomorrow" : "Reward: wisdom bonus";
+}
+
+function offlineCapMs() {
+  const treeCap = treeBought("sleep2") ? 24 : treeBought("sleep1") ? 16 : 8;
+  return Math.max(treeCap, activeClass() ? activeClass().offlineCap : 0) * 3600 * 1000;
+}
 function goldenIntervalMs() { const base = 80000 + Math.random() * 60000; if (treeBought("luck2")) return base / 4; if (treeBought("luck1")) return base / 2; return base; }
 
 function earn(n) { if (tutPaused) return; bank += n; earned += n; lifetimeEarned += n; }
@@ -1314,6 +1416,14 @@ function render() {
   rollTo(bank);
   const clickRate = perClick();
   const secRate = perSec();
+  const selectedClass = activeClass();
+  if (classBadge && selectedClass) {
+    classBadge.hidden = false;
+    classBadgeIcon.textContent = selectedClass.icon;
+    classBadgeName.textContent = selectedClass.name;
+    classBadgeDesc.textContent = `Click ×${selectedClass.click} · Passive ×${selectedClass.sec} · Offline ×${selectedClass.offline}`;
+  }
+  updateDailyChallenge();
   pc.textContent = "+" + fmt(clickRate) + " per click";
   ps.textContent = fmt(secRate) + " per sec";
   if (liveClick) liveClick.textContent = "+" + fmt(clickRate);
@@ -1455,6 +1565,23 @@ function buy(i) {
   sfx("buy"); replay(rows[i].b, "bought");
   render(); save();
 }
+
+function buyMax() {
+  let bought = 0;
+  rows.forEach((row, i) => {
+    while (bank >= cost(i)) {
+      bank -= cost(i);
+      owned[i] += 1;
+      bought += 1;
+    }
+  });
+  if (!bought) { sfx("nope"); return; }
+  sfx("buy");
+  render();
+  save();
+}
+
+if (buyMaxBtn) buyMaxBtn.addEventListener("click", buyMax);
 
 const ROOT_ZOOM = parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
 
@@ -2313,7 +2440,12 @@ function grantGoldenReward(el, showFloat) {
   render(); save();
 }
 
-setTimeout(() => { spawnGolden(); goldenTimer = setTimeout(spawnGolden, goldenIntervalMs()); }, 60000);
+function spawnFirstGolden() {
+  if (goldenEl) return;
+  if (fighting || tutPaused) { setTimeout(spawnFirstGolden, 5000); return; }
+  spawnGolden();
+}
+setTimeout(spawnFirstGolden, 15000);
 
 requestAnimationFrame(() => { document.querySelectorAll("#rail > *").forEach((el, i) => { el.style.setProperty("--d", 60 + i * 55 + "ms"); el.classList.add("in-left"); }); });
 
@@ -2582,10 +2714,12 @@ var phoneBadge = document.getElementById("phoneBadge");
 const PHONE_NOTIF_MAX = 3;
 const phoneNotifList = [];
 
-function bannerIconFor(kind) { switch (kind) { case "silly": return "😼"; case "ach": return "🏆"; case "golden": return "🍊"; case "story": return "📖"; case "hareld": return "🐰"; case "transcend": return "✨"; default: return "🔔"; } }
-function bannerLabelFor(kind) { switch (kind) { case "silly": return "Message · now"; case "ach": return "Achievement · now"; case "golden": return "Gift · now"; case "story": return "Story · now"; case "hareld": return "Hareld · now"; case "transcend": return "System · now"; default: return "Notification · now"; } }
+function bannerIconFor(kind) { switch (kind) { case "silly": return "😼"; case "ach": return "🏆"; case "golden": return "🍊"; case "story": return "📖"; case "hareld": return "🐰"; case "transcend": return "✨"; case "daily": return "📅"; default: return "🔔"; } }
+function bannerLabelFor(kind) { switch (kind) { case "silly": return "Message · now"; case "ach": return "Achievement · now"; case "golden": return "Gift · now"; case "story": return "Story · now"; case "hareld": return "Hareld · now"; case "transcend": return "System · now"; case "daily": return "Daily Wisdom · now"; default: return "Notification · now"; } }
 
-function pushBanner(kind, title, desc, onClick) { bannerQueue.push({ kind, title, desc, onClick }); pumpBanner(); addPhoneNotif(kind, title); }
+function pushBanner(kind, title, desc, onClick) {
+  toast(title, desc, kind);
+}
 
 function pumpBanner() {
   if (bannerActive) return;

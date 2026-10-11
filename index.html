@@ -18,6 +18,9 @@
     <div class="live-row"><span>👆</span><b id="liveClick">+0</b><small>per click</small></div>
     <div class="live-row"><span>⏱️</span><b id="liveSec">0</b><small>per sec</small></div>
   </div>
+  <div class="class-badge" id="classBadge" hidden><span id="classBadgeIcon">🌙</span><div><b id="classBadgeName"></b><small id="classBadgeDesc"></small></div></div>
+  <div class="daily-card" id="dailyCard" hidden>
+    <small>DAILY WISDOM</small><b id="dailyTitle"></b><span id="dailyProgress"></span><em id="dailyReward"></em></div>
   <button class="challenge" id="challenge" type="button" disabled><b>Challenge</b><small id="chsub"></small></button>
   <button class="prestige" id="prestige" type="button" hidden>
     <b>✨ Transcend</b>
@@ -57,6 +60,7 @@
     <button type="button" class="upgrade-filter" data-filter="click">Per click</button>
     <button type="button" class="upgrade-filter" data-filter="sec">Per sec</button>
   </div>
+  <button class="buy-max" id="buyMax" type="button">Buy max affordable</button>
   <div class="ups" id="ups"></div>
   <p class="hint" id="hint">More upgrades appear as you earn wisdom.</p>
 </aside>
@@ -200,6 +204,11 @@
     <span class="omoji">✨</span>
     <h2>Transcend?</h2>
     <p id="ptext"></p>
+    <div class="class-choice" id="classChoice" hidden>
+      <h3>Choose your path</h3>
+      <p class="class-choice-sub">This choice is permanent until you reset the game.</p>
+      <div class="class-grid" id="classGrid"></div>
+    </div>
     <div class="pbtns">
       <button id="pyes" type="button">Transcend</button>
       <button id="pno" type="button" class="pno">Not yet</button>
