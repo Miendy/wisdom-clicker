@@ -4,11 +4,13 @@
 
 **A cozy idle game about a sleepy cat, a very persistent tangerine, and the slow accumulation of wisdom.**
 
-*Press the button. Gather the words. Mind the gremlin.*
+*Press the button, youngin.*
 
-[![Made with vanilla JS](https://img.shields.io/badge/made%20with-vanilla%20JS-f0c24f?style=for-the-badge&labelColor=1b1830)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![No build step](https://img.shields.io/badge/no%20build%20step-%E2%9C%A8-e5577f?style=for-the-badge&labelColor=1b1830)](#-running-it)
-[![Tangerines stolen](https://img.shields.io/badge/tangerines%20stolen-0-f08a24?style=for-the-badge&labelColor=1b1830)](#-the-orchard)
+### 🎮 [**Play it live → miendy.github.io/wisdom-clicker**](https://miendy.github.io/wisdom-clicker/)
+
+[![Play Now](https://img.shields.io/badge/%E2%96%B6%20play-now-f0c24f?style=for-the-badge&labelColor=1b1830)](https://miendy.github.io/wisdom-clicker/)
+[![Made with vanilla JS](https://img.shields.io/badge/made%20with-vanilla%20JS-e5577f?style=for-the-badge&labelColor=1b1830)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![No build step](https://img.shields.io/badge/no%20build%20step-%E2%9C%A8-f08a24?style=for-the-badge&labelColor=1b1830)](https://miendy.github.io/wisdom-clicker/)
 
 </div>
 
@@ -25,6 +27,8 @@ You are standing in his sunbeam. He has noticed. He is, in his own words, *mostl
 **Wisdom Clicker** is a slow-burn idle game in that tradition. You click a button, the cat says something wise or withering, and wisdom accrues. Spend it on upgrades. Buy enough and the cat will fight you for the tangerine. Win, and your wisdom doubles. Forever. Somewhere in the middle of all this, a small grey gremlin will text you riddles and try to steal your stuff.
 
 It is a game about patience. It is not patient with you.
+
+**👉 [Play it now, no download required.](https://miendy.github.io/wisdom-clicker/)**
 
 ---
 
@@ -60,7 +64,7 @@ It is a game about patience. It is not patient with you.
 - **Silly Cat** appears at milestones and demands a riddle
 - Solve it → forced favor from the Wise Cat (×5 wisdom)
 - Fail it → he takes most of your stash
-- **Riddle match is typo-tolerant** — you get two tries and Levenshtein distance forgives small mistakes
+- **Typo-tolerant** — two tries, Levenshtein forgives small mistakes
 - **One upgrade branch** makes him harmless forever. He will sulk.
 
 </td>
@@ -127,7 +131,7 @@ Everything multiplies. Nothing is additive at the top. This is deliberate — it
 
 ---
 
-## 🚀 Running it
+## 🚀 Running it locally
 
 ```bash
 # Option 1: just open it
@@ -141,6 +145,24 @@ python3 -m http.server 8000
 There is no step 3. There is no `npm install`. The cat does not have a package manager.
 
 **Requirements:** a browser made after 2020. That's it.
+
+---
+
+## 🌐 Deployment
+
+The game is hosted on **GitHub Pages** and lives at:
+
+**→ [https://miendy.github.io/wisdom-clicker/](https://miendy.github.io/wisdom-clicker/)**
+
+To deploy your own fork:
+
+1. Fork or clone the repo
+2. Push it to a GitHub repository named `wisdom-clicker` (or anything you like)
+3. Go to **Settings → Pages**
+4. Set source to **Deploy from a branch**, branch `main`, folder `/ (root)`
+5. Wait a minute. The cat will appear.
+
+No CI, no build, no workflow file. Static files in, static files out.
 
 ---
 
@@ -187,5 +209,7 @@ If you play for ten minutes and close the tab smiling, it worked.
 **🍊 May your thumb stay strong and your tangerine stay on your head. 🍊**
 
 *Wisdom is knowing when to stop clicking. You will not stop clicking.*
+
+### [▶ Play Wisdom Clicker](https://miendy.github.io/wisdom-clicker/)
 
 </div>
