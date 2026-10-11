@@ -30,6 +30,7 @@
   <button class="stats-btn" id="statsBtn" type="button">Stats</button>
   <button class="stats-btn" id="storyBtn" type="button">Story</button>
   <button class="stats-btn" id="minigameBtn" type="button">🎮 Minigames</button>
+  <button class="stats-btn" id="notifBtn" type="button">🔔 Notifications <span id="notifCount">0</span></button>
   <button class="insight-btn" id="insightBtn" type="button" hidden>🌟 Wisdom Tree</button>
   <button class="reset" id="reset" type="button">⚠️ Reset progress</button>
 </div>
@@ -246,6 +247,15 @@
     <div class="stats-grid" id="statsGrid"></div>
   </div>
 </div>
+<div class="panel-modal" id="notifModal" hidden>
+  <div class="panel-card">
+    <div class="panel-head">
+      <h2>🔔 Notifications</h2>
+      <button class="panel-x" id="notifClose" type="button" aria-label="Close">✕</button>
+    </div>
+    <div class="notif-history" id="notifHistory"></div>
+  </div>
+</div>
 <div class="tree" id="treeModal" hidden>
   <div class="tree-sky" aria-hidden="true"></div>
   <div class="tree-head">
@@ -267,7 +277,7 @@
     <div class="tree-nodes" id="treeNodes"></div>
   </div>
   <div class="tree-list" id="treeList"></div>
-  <p class="tree-hint" id="treeHint">Tap a glowing star to unlock it.</p>
+  <p class="tree-hint" id="treeHint">Drag to explore · tap a glowing star to unlock it.</p>
 </div>
 
 <div class="minigames" id="minigames" hidden>

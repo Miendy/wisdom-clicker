@@ -207,8 +207,9 @@ function bumpCombo() {
 }
 
 function comboMult() {
-  const cap = treeBought("flow3") ? 100 : 50;
-  return 1 + Math.min(combo, cap) * 0.02;
+  const cap = treeBought("flow4") ? 150 : treeBought("flow3") ? 100 : 50;
+  const step = treeBought("flow5") ? 0.025 : 0.02;
+  return 1 + Math.min(combo, cap) * step;
 }
 
 const sleep = (ms) => (skipped || reduce) ? Promise.resolve() : new Promise((r) => { wake = r; setTimeout(r, ms); });
@@ -230,40 +231,53 @@ function scold() {
 function flash() { flashEl.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450 }); }
 
 async function cutscene() {
+  if (fighting && !(tutState.active && tutState.chapterId === "boss")) return;
   fighting = true;
-  hidePhone();
-  mute.hidden = false;
-  audio();
-  skipped = false;
-  clearInterval(typer);
-  words.classList.remove("cursor");
-  fightForm = bossForm();
-  cutsm.textContent = BOSS_SUBS[fightForm];
-  cutbig.textContent = BOSS_NAMES[fightForm];
-  cut.className = "cut";
-  cut.hidden = false;
-  void cut.offsetWidth;
-  cut.classList.add("on");
-  replay(cut, "shake");
-  await sleep(900);
-  cut.classList.add("zoom");
-  await sleep(1200);
-  cut.classList.add("eyes");
-  flash();
-  boom();
-  sfx("pop");
-  replay(cut, "shake");
-  await sleep(1100);
-  cut.classList.add("title");
-  flash();
-  boom();
-  sfx("pop");
-  await sleep(1600);
-  cutline.textContent = pick(bossIntros);
-  cut.classList.add("talk");
-  await sleep(2400);
-  cut.hidden = true;
-  startFight();
+  try {
+    hidePhone();
+    mute.hidden = false;
+    audio();
+    skipped = false;
+    clearInterval(typer);
+    words.classList.remove("cursor");
+    fightForm = bossForm();
+    cutsm.textContent = BOSS_SUBS[fightForm];
+    cutbig.textContent = BOSS_NAMES[fightForm];
+    cut.className = "cut";
+    cut.hidden = false;
+    void cut.offsetWidth;
+    cut.classList.add("on");
+    replay(cut, "shake");
+    await sleep(900);
+    cut.classList.add("zoom");
+    await sleep(1200);
+    cut.classList.add("eyes");
+    flash();
+    boom();
+    sfx("pop");
+    replay(cut, "shake");
+    await sleep(1100);
+    cut.classList.add("title");
+    flash();
+    boom();
+    sfx("pop");
+    await sleep(1600);
+    cutline.textContent = pick(bossIntros);
+    cut.classList.add("talk");
+    await sleep(2400);
+    cut.hidden = true;
+    startFight();
+  } catch (error) {
+    console.error("Boss fight failed to start", error);
+    running = false;
+    clearTimeout(spawner);
+    cut.hidden = true;
+    arena.hidden = true;
+    mute.hidden = true;
+    fighting = false;
+    showPhone();
+    render();
+  }
 }
 
 function draw() {
@@ -784,17 +798,35 @@ const TREE_NODES = [
   { id: "sleep1",      icon: "💤", branch: "sleep",   angle: -140, radius: 0.38, cost: 3,  minPrestige: 0, name: "Deep Slumber",   desc: "Offline cap: 8h → 16h",             requires: "core" },
   { id: "sleep2",      icon: "🌙", branch: "sleep",   angle: -140, radius: 0.62, cost: 8,  minPrestige: 1, name: "Long Rest",      desc: "Offline cap: 16h → 24h",            requires: "sleep1" },
   { id: "sleep3",      icon: "💭", branch: "sleep",   angle: -140, radius: 0.86, cost: 25, minPrestige: 3, name: "Dream Walking",  desc: "Offline earns at 2× the rate",      requires: "sleep2" },
+  { id: "sleep4",      icon: "🛌", branch: "sleep",   angle: -140, radius: 1.08, cost: 60, minPrestige: 5, name: "Moon Nap",       desc: "Offline cap: 48 hours",              requires: "sleep3" },
+  { id: "sleep5",      icon: "🌌", branch: "sleep",   angle: -140, radius: 1.28, cost: 120,minPrestige: 8, name: "Eternal Rest",   desc: "Offline earnings +25%",              requires: "sleep4" },
   { id: "luck1",       icon: "🍀", branch: "luck",    angle: 140,  radius: 0.38, cost: 4,  minPrestige: 0, name: "Golden Nose",    desc: "Golden spawn interval halved",      requires: "core" },
   { id: "luck2",       icon: "👁️", branch: "luck",    angle: 140,  radius: 0.62, cost: 10, minPrestige: 1, name: "Keen Eye",       desc: "Golden spawn interval halved again", requires: "luck1" },
   { id: "luck3",       icon: "✨", branch: "luck",    angle: 140,  radius: 0.86, cost: 30, minPrestige: 3, name: "Golden Cascade", desc: "Goldens grant 2 rewards each",      requires: "luck2" },
+  { id: "luck4",       icon: "🪙", branch: "luck",    angle: 140,  radius: 1.08, cost: 50, minPrestige: 5, name: "Fortune Teller", desc: "Golden rewards are 25% stronger",    requires: "luck3" },
+  { id: "luck5",       icon: "💰", branch: "luck",    angle: 140,  radius: 1.28, cost: 100,minPrestige: 8, name: "Orchard Vault",  desc: "Golden rewards are 50% stronger",    requires: "luck4" },
   { id: "flow1",       icon: "🧠", branch: "flow",    angle: -90,  radius: 0.40, cost: 3,  minPrestige: 0, name: "Long Memory",    desc: "Combo window: 900ms → 1150ms",      requires: "core" },
   { id: "flow2",       icon: "🐾", branch: "flow",    angle: -90,  radius: 0.64, cost: 7,  minPrestige: 1, name: "Steady Paw",     desc: "Combo window: 1150ms → 1400ms",     requires: "flow1" },
   { id: "flow3",       icon: "🌟", branch: "flow",    angle: -90,  radius: 0.88, cost: 22, minPrestige: 3, name: "Perfect Flow",   desc: "Combo multiplier caps at ×2.0",     requires: "flow2" },
+  { id: "flow4",       icon: "⚡", branch: "flow",    angle: -90,  radius: 1.08, cost: 55, minPrestige: 5, name: "Lightning Paw",  desc: "Combo multiplier caps at ×3.0",     requires: "flow3" },
+  { id: "flow5",       icon: "🌊", branch: "flow",    angle: -90,  radius: 1.28, cost: 110,minPrestige: 8, name: "Endless Rhythm", desc: "Each combo step is worth 2.5%",      requires: "flow4" },
   { id: "pride1",      icon: "🏆", branch: "pride",   angle: -40,  radius: 0.40, cost: 12, minPrestige: 1, name: "Trophy Polish",  desc: "Achievement buffs doubled",         requires: "core" },
+  { id: "pride2",      icon: "🎖️", branch: "pride",   angle: -40,  radius: 0.68, cost: 35, minPrestige: 3, name: "Laurel Crown",   desc: "All wisdom gains +10%",              requires: "pride1" },
+  { id: "pride3",      icon: "👑", branch: "pride",   angle: -40,  radius: 0.96, cost: 80, minPrestige: 6, name: "Legendary Ego",  desc: "All wisdom gains +25%",              requires: "pride2" },
   { id: "insight1",    icon: "💎", branch: "insight", angle: 40,   radius: 0.40, cost: 5,  minPrestige: 0, name: "Deep Insight",   desc: "Insight bonus: +10% → +12.5%/pt",   requires: "core" },
   { id: "insight2",    icon: "🔮", branch: "insight", angle: 40,   radius: 0.64, cost: 15, minPrestige: 2, name: "Ancient Wisdom", desc: "Insight bonus: +12.5% → +15%/pt",   requires: "insight1" },
   { id: "insight3",    icon: "🌊", branch: "insight", angle: 40,   radius: 0.88, cost: 40, minPrestige: 4, name: "Deepest Well",   desc: "Insight bonus: +15% → +20%/pt",     requires: "insight2" },
-  { id: "gremlin1",    icon: "😼", branch: "gremlin", angle: 90,   radius: 0.55, cost: 20, minPrestige: 2, name: "Gremlin Pact",   desc: "Silly Cat no longer steals wisdom", requires: "core" }
+  { id: "insight4",    icon: "🪞", branch: "insight", angle: 40,   radius: 1.08, cost: 70, minPrestige: 6, name: "Clear Mirror",   desc: "Insight bonus: +20% → +25%/pt",     requires: "insight3" },
+  { id: "insight5",    icon: "🔭", branch: "insight", angle: 40,   radius: 1.28, cost: 160,minPrestige: 10,name: "Cosmic Perspective",desc: "Insight bonus: +25% → +30%/pt",   requires: "insight4" },
+  { id: "gremlin1",    icon: "😼", branch: "gremlin", angle: 90,   radius: 0.55, cost: 20, minPrestige: 2, name: "Gremlin Pact",   desc: "Silly Cat no longer steals wisdom", requires: "core" },
+  { id: "gremlin2",    icon: "🧤", branch: "gremlin", angle: 90,   radius: 0.82, cost: 35, minPrestige: 4, name: "Sticky Paws",    desc: "Silly Cat steals 40% instead of 60%", requires: "gremlin1" },
+  { id: "gremlin3",    icon: "🎭", branch: "gremlin", angle: 90,   radius: 1.09, cost: 90, minPrestige: 8, name: "Chaos Encore",   desc: "Silly Cat's victory boost lasts longer", requires: "gremlin2" },
+  { id: "focus1",      icon: "🎯", branch: "focus",   angle: -65,  radius: 0.38, cost: 6,  minPrestige: 0, name: "Soft Focus",      desc: "Click wisdom +10%",                  requires: "core" },
+  { id: "focus2",      icon: "🔆", branch: "focus",   angle: -65,  radius: 0.68, cost: 18, minPrestige: 2, name: "Bright Focus",    desc: "Click wisdom +20%",                  requires: "focus1" },
+  { id: "focus3",      icon: "☄️", branch: "focus",   angle: -65,  radius: 0.98, cost: 55, minPrestige: 5, name: "Laser Thought",   desc: "Click wisdom +35%",                  requires: "focus2" },
+  { id: "harvest1",    icon: "🌾", branch: "harvest", angle: 65,   radius: 0.38, cost: 6,  minPrestige: 0, name: "Quiet Harvest",   desc: "Passive wisdom +10%",                requires: "core" },
+  { id: "harvest2",    icon: "🌻", branch: "harvest", angle: 65,   radius: 0.68, cost: 18, minPrestige: 2, name: "Rich Soil",       desc: "Passive wisdom +25%",                requires: "harvest1" },
+  { id: "harvest3",    icon: "🌳", branch: "harvest", angle: 65,   radius: 0.98, cost: 55, minPrestige: 5, name: "Orchard Engine",  desc: "Passive wisdom +50%",                requires: "harvest2" }
 ];
 
 function treeBought(id) { return id === "core" || !!insightPurchases[id]; }
@@ -1037,8 +1069,76 @@ const treeList = document.getElementById("treeList");
 const treeInsight = document.getElementById("treeInsight");
 const treeHint = document.getElementById("treeHint");
 let treeEls = {};
+let treePanX = 0, treePanY = 0;
+let treeDragging = false, treeDragMoved = false, treeDragPointerId = null;
+let treeDragStartX = 0, treeDragStartY = 0, treePanStartX = 0, treePanStartY = 0;
+let treeSuppressClickUntil = 0;
 
-function treeNodePos(node) { const cx = 500, cy = 350; const maxR = 300; if (node.id === "core") return { x: cx, y: cy }; const rad = node.angle * Math.PI / 180; return { x: cx + Math.cos(rad) * node.radius * maxR, y: cy + Math.sin(rad) * node.radius * maxR }; }
+function applyTreePan() {
+  const transform = `translate(${treePanX}px, ${treePanY}px)`;
+  treeLines.style.transform = transform;
+  treeNodes.style.transform = transform;
+}
+
+treeStage.addEventListener("pointerdown", (event) => {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  treeDragging = true;
+  treeDragMoved = false;
+  treeDragPointerId = event.pointerId;
+  treeDragStartX = event.clientX;
+  treeDragStartY = event.clientY;
+  treePanStartX = treePanX;
+  treePanStartY = treePanY;
+  treeStage.classList.add("dragging");
+});
+
+treeStage.addEventListener("pointermove", (event) => {
+  if (!treeDragging || event.pointerId !== treeDragPointerId) return;
+  const dx = event.clientX - treeDragStartX;
+  const dy = event.clientY - treeDragStartY;
+  if (Math.abs(dx) + Math.abs(dy) > 5) treeDragMoved = true;
+  if (!treeDragMoved) return;
+  event.preventDefault();
+  treePanX = treePanStartX + dx;
+  treePanY = treePanStartY + dy;
+  applyTreePan();
+});
+
+function finishTreeDrag(event) {
+  if (!treeDragging || event.pointerId !== treeDragPointerId) return;
+  if (treeDragMoved) treeSuppressClickUntil = performance.now() + 100;
+  treeDragging = false;
+  treeStage.classList.remove("dragging");
+  treeDragPointerId = null;
+}
+
+treeStage.addEventListener("pointerup", finishTreeDrag);
+treeStage.addEventListener("pointercancel", finishTreeDrag);
+
+const TREE_POSITIONS = {
+  core: [500, 350],
+  sleep1: [430, 280], sleep2: [360, 210], sleep3: [290, 140], sleep4: [220, 70], sleep5: [150, 70],
+  luck1: [430, 420], luck2: [360, 490], luck3: [290, 560], luck4: [220, 630], luck5: [150, 630],
+  flow1: [500, 280], flow2: [500, 210], flow3: [500, 140], flow4: [500, 70], flow5: [500, 30],
+  pride1: [570, 350], pride2: [640, 350], pride3: [710, 350],
+  insight1: [570, 420], insight2: [640, 490], insight3: [710, 560], insight4: [780, 630], insight5: [850, 630],
+  gremlin1: [430, 350], gremlin2: [360, 350], gremlin3: [290, 350],
+  focus1: [570, 280], focus2: [640, 210], focus3: [710, 140],
+  harvest1: [500, 420], harvest2: [500, 490], harvest3: [500, 560]
+};
+
+function treeNodePos(node) {
+  const position = TREE_POSITIONS[node.id];
+  if (position) return { x: position[0], y: position[1] };
+  return { x: 500, y: 350 };
+}
+
+function treeOrthogonalPath(from, to) {
+  const bend = Math.abs(to.x - from.x) >= Math.abs(to.y - from.y)
+    ? { x: to.x, y: from.y }
+    : { x: from.x, y: to.y };
+  return `M ${from.x} ${from.y} L ${bend.x} ${bend.y} L ${to.x} ${to.y}`;
+}
 
 function renderTreeLines() {
   treeLines.innerHTML = "";
@@ -1048,8 +1148,8 @@ function renderTreeLines() {
     if (!from) continue;
     const a = treeNodePos(from);
     const b = treeNodePos(n);
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("x1", a.x); line.setAttribute("y1", a.y); line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    line.setAttribute("d", treeOrthogonalPath(a, b));
     line.setAttribute("class", treeBought(n.id) ? "tree-line on" : treeBought(from.id) && treeVisible(n) ? "tree-line ready" : "tree-line locked");
     treeLines.appendChild(line);
   }
@@ -1073,8 +1173,8 @@ function renderTreeNodes() {
       ${bought ? '<span class="tn-check">✓</span>' : ''}
       <span class="tn-tip"><b>${n.name}</b><small>${n.desc}</small><em>${treeWhy(n)}</em></span>
     `;
-    if (canBuy) el.addEventListener("click", () => buyTreeNode(n.id));
-    else if (!bought) el.addEventListener("click", () => { sfx("nope"); treeHint.textContent = treeWhy(n); setTimeout(() => { treeHint.textContent = "Tap a glowing star to unlock it."; }, 2200); });
+    if (canBuy) el.addEventListener("click", () => { if (performance.now() < treeSuppressClickUntil) return; buyTreeNode(n.id); });
+    else if (!bought) el.addEventListener("click", () => { if (performance.now() < treeSuppressClickUntil) return; sfx("nope"); treeHint.textContent = treeWhy(n); setTimeout(() => { treeHint.textContent = "Drag to explore · tap a glowing star to unlock it."; }, 2200); });
     el.addEventListener("mouseenter", () => { if (el._chime) return; el._chime = true; sfx("chime"); });
     treeNodes.appendChild(el); treeEls[n.id] = el;
   }
@@ -1082,7 +1182,7 @@ function renderTreeNodes() {
 
 function renderTreeList() {
   treeList.innerHTML = "";
-  const branches = ["sleep", "luck", "flow", "pride", "insight", "gremlin"];
+  const branches = ["sleep", "luck", "flow", "pride", "insight", "gremlin", "focus", "harvest"];
   for (const b of branches) {
     const nodes = TREE_NODES.filter(n => n.branch === b);
     if (!nodes.length) continue;
@@ -1104,7 +1204,7 @@ function renderTreeList() {
   }
 }
 
-function renderTree() { treeInsight.textContent = insight + " ✨"; renderTreeLines(); renderTreeNodes(); renderTreeList(); treeHint.textContent = "Tap a glowing star to unlock it."; }
+function renderTree() { treeInsight.textContent = insight + " ✨"; renderTreeLines(); renderTreeNodes(); renderTreeList(); applyTreePan(); treeHint.textContent = "Drag to explore · tap a glowing star to unlock it."; }
 
 document.getElementById("insightBtn").addEventListener("click", () => { sfx("blip", { pitch: 1100 }); renderTree(); treeModal.hidden = false; });
 document.getElementById("treeClose").addEventListener("click", () => { sfx("blip", { pitch: 700 }); treeModal.hidden = true; });
@@ -1152,6 +1252,13 @@ function renderStats() {
 document.getElementById("statsBtn").addEventListener("click", () => { sfx("blip", { pitch: 1000 }); renderStats(); statsModal.hidden = false; });
 document.getElementById("statsClose").addEventListener("click", () => { sfx("blip", { pitch: 700 }); statsModal.hidden = true; });
 statsModal.addEventListener("click", (e) => { if (e.target === statsModal) { statsModal.hidden = true; sfx("blip", { pitch: 700 }); } });
+
+const notifModal = document.getElementById("notifModal");
+const notifHistory = document.getElementById("notifHistory");
+const notifCount = document.getElementById("notifCount");
+document.getElementById("notifBtn").addEventListener("click", () => { sfx("blip", { pitch: 1000 }); renderNotifHistory(); notifModal.hidden = false; });
+document.getElementById("notifClose").addEventListener("click", () => { sfx("blip", { pitch: 700 }); notifModal.hidden = true; });
+notifModal.addEventListener("click", (e) => { if (e.target === notifModal) { notifModal.hidden = true; sfx("blip", { pitch: 700 }); } });
 
 const rollState = { cur: 0, target: 0, raf: null };
 const BIG_NUM_MAX_STEP = 0.14;
@@ -1205,7 +1312,8 @@ function computeOffline() {
   const dreamBonus = treeBought("sleep3") ? 2 : 1;
   const classCap = activeClass ? activeClass.offlineCap * 3600 * 1000 : 0;
   const cappedAway = Math.min(away, classCap || away);
-  const gain = rate * (cappedAway / 1000) * dreamBonus * (activeClass ? activeClass.offline : 1);
+  const offlineMul = treeBought("sleep5") ? 1.25 : 1;
+  const gain = rate * (cappedAway / 1000) * dreamBonus * offlineMul * (activeClass ? activeClass.offline : 1);
   return { away: cappedAway, gain };
 }
 
@@ -1222,8 +1330,8 @@ document.addEventListener("visibilitychange", () => { if (document.hidden) { sav
 window.addEventListener("beforeunload", () => { save(); recordSeen(); });
 setInterval(recordSeen, 15000);
 
-const INSIGHT_BASE = 1e6;
-function insightGain() { return Math.floor(Math.sqrt(earned / INSIGHT_BASE)); }
+const GOLDENS_PER_INSIGHT = 3;
+function insightGain() { return Math.floor(Math.sqrt(goldenTotal / GOLDENS_PER_INSIGHT)); }
 
 function updatePrestigeButton() {
   const el = document.getElementById("prestige");
@@ -1234,11 +1342,11 @@ function updatePrestigeButton() {
   el.hidden = false;
   if (!window._prestigePinged) { window._prestigePinged = true; pushBanner("transcend", "Transcend ready", "You may take the Great Nap.", () => {}); }
   const nextTier = gain + 1;
-  const needForNext = nextTier * nextTier * INSIGHT_BASE;
-  const closeness = earned / needForNext;
+  const needForNext = nextTier * nextTier * GOLDENS_PER_INSIGHT;
+  const closeness = goldenTotal / needForNext;
   const isHot = closeness > 0.8;
   el.classList.toggle("hot", isHot);
-  if (isHot) { const remainPct = Math.round((1 - closeness) * 100); sub.innerHTML = `+${gain} Insight · +${gain * 10}% forever<br><em>${remainPct}% to +${nextTier} Insight!</em>`; }
+  if (isHot) { const remainPct = Math.round((1 - closeness) * 100); sub.innerHTML = `+${gain} Insight · +${gain * 10}% forever<br><em>${remainPct}% to +${nextTier} Insight · catch more goldens</em>`; }
   else { sub.textContent = `+${gain} Insight · +${gain * 10}% wisdom forever`; }
 }
 
@@ -1309,7 +1417,7 @@ document.getElementById("prestige").addEventListener("click", () => { sfx("blip"
 document.getElementById("pyes").addEventListener("click", doPrestige);
 document.getElementById("pno").addEventListener("click", () => { sfx("nope"); document.getElementById("pmodal").hidden = true; });
 
-function insightRate() { if (treeBought("insight3")) return 0.20; if (treeBought("insight2")) return 0.15; if (treeBought("insight1")) return 0.125; return 0.10; }
+function insightRate() { if (treeBought("insight5")) return 0.30; if (treeBought("insight4")) return 0.25; if (treeBought("insight3")) return 0.20; if (treeBought("insight2")) return 0.15; if (treeBought("insight1")) return 0.125; return 0.10; }
 const insightMul = () => 1 + insight * insightRate();
 
 const cost = (i) => Math.ceil(ups[i].base * 1.22 ** owned[i]);
@@ -1355,8 +1463,25 @@ function baseSecFlat() {
 }
 
 function activeClass() { return classId ? CLASSES[classId] : null; }
-const perClick = () => baseClickFlat() * mult * boostMul() * achMul.all * achMul.click * insightMul() * comboMult() * (activeClass() ? activeClass().click : 1);
-const perSec = () => baseSecFlat() * mult * boostMul() * achMul.all * insightMul() * (activeClass() ? activeClass().sec : 1);
+function treeWisdomMul(kind) {
+  let value = 1;
+  if (kind === "click") {
+    if (treeBought("focus1")) value *= 1.10;
+    if (treeBought("focus2")) value *= 1.20 / 1.10;
+    if (treeBought("focus3")) value *= 1.35 / 1.20;
+  }
+  if (kind === "sec") {
+    if (treeBought("harvest1")) value *= 1.10;
+    if (treeBought("harvest2")) value *= 1.25 / 1.10;
+    if (treeBought("harvest3")) value *= 1.50 / 1.25;
+  }
+  if (treeBought("pride2")) value *= 1.10;
+  if (treeBought("pride3")) value *= 1.25 / 1.10;
+  return value;
+}
+
+const perClick = () => baseClickFlat() * mult * boostMul() * achMul.all * achMul.click * insightMul() * comboMult() * treeWisdomMul("click") * (activeClass() ? activeClass().click : 1);
+const perSec = () => baseSecFlat() * mult * boostMul() * achMul.all * insightMul() * treeWisdomMul("sec") * (activeClass() ? activeClass().sec : 1);
 const bossNeed = () => 2000 * 8 ** bossLevel;
 
 const DAILY_CHALLENGES = [
@@ -1393,10 +1518,12 @@ function updateDailyChallenge() {
 }
 
 function offlineCapMs() {
-  const treeCap = treeBought("sleep2") ? 24 : treeBought("sleep1") ? 16 : 8;
+  const treeCap = treeBought("sleep4") ? 48 : treeBought("sleep2") ? 24 : treeBought("sleep1") ? 16 : 8;
   return Math.max(treeCap, activeClass() ? activeClass().offlineCap : 0) * 3600 * 1000;
 }
 function goldenIntervalMs() { const base = 80000 + Math.random() * 60000; if (treeBought("luck2")) return base / 4; if (treeBought("luck1")) return base / 2; return base; }
+
+function goldenRewardMul() { return treeBought("luck5") ? 1.5 : treeBought("luck4") ? 1.25 : 1; }
 
 function earn(n) { if (tutPaused) return; bank += n; earned += n; lifetimeEarned += n; }
 
@@ -1459,12 +1586,13 @@ function render() {
   challenge.classList.toggle("ready", ready);
   const nextForm = bossForm();
   const formInfo = BOSS_FORMS_INFO[nextForm];
+  const formHint = bossLevel < 3 ? "Ghost form unlocks at Boss Lv 4" : bossLevel < 5 ? "King form unlocks at Boss Lv 6" : "All boss forms unlocked";
   if (ready) {
     challenge.querySelector("b").textContent = "⚔️ Challenge!";
-    chsub.innerHTML = `<span class="bf-tag" data-form="${nextForm}">${formInfo.icon} ${formInfo.name}</span> Boss Lv ${bossLevel + 1} · ×2 wisdom forever`;
+    chsub.innerHTML = `<span class="bf-tag" data-form="${nextForm}">${formInfo.icon} ${formInfo.name}</span> Boss Lv ${bossLevel + 1} · ${formInfo.blurb}<small class="form-hint">${formHint}</small>`;
   } else {
     challenge.querySelector("b").textContent = "Challenge";
-    chsub.innerHTML = `Next: <span class="bf-tag" data-form="${nextForm}">${formInfo.icon} ${formInfo.name}</span><br>${fmt(earned)} / ${fmt(bossNeed())}`;
+    chsub.innerHTML = `Next: <span class="bf-tag" data-form="${nextForm}">${formInfo.icon} ${formInfo.name}</span><br>${fmt(earned)} / ${fmt(bossNeed())}<small class="form-hint">${formHint}</small>`;
   }
 }
 
@@ -1619,7 +1747,8 @@ btn.addEventListener("click", (e) => {
 });
 
 challenge.addEventListener("click", () => {
-  if (fighting || earned < bossNeed()) return;
+  const bossTutorialLaunch = tutState.active && tutState.chapterId === "boss";
+  if (earned < bossNeed() || (fighting && !bossTutorialLaunch) || vnBusy || sillyBusy || hareldBusy || mgRunning) return;
   if (!ambOn) { audio(); ambStart("idle"); }
   sfx("blip", { pitch: 1200 });
   cutscene();
@@ -2077,7 +2206,8 @@ async function sillySteals(r, why) {
     live.textContent = text; type(text); replay(bubble, "hit");
     return;
   }
-  const loss = Math.floor(bank * 0.6);
+  const lossRate = treeBought("gremlin2") ? 0.4 : 0.6;
+  const loss = Math.floor(bank * lossRate);
   if (loss < 1) { await catSays(pick(sillyBroke)); }
   else {
     await catSays(pick(sillyYoink));
@@ -2103,7 +2233,7 @@ async function sillyBeaten() {
   await waitDone("Bring it on ⚔️");
   await sillyLeave();
   await duelScene();
-  boostEnd = performance.now() + 10000;
+  boostEnd = performance.now() + (treeBought("gremlin3") ? 15000 : 10000);
   render();
   fighting = false; sillyBusy = false; lastSillyAt = performance.now();
   bubble.classList.remove("angry");
@@ -2432,10 +2562,11 @@ function grantGoldenReward(el, showFloat) {
   const x = r.left + r.width / 2;
   const y = r.top + r.height / 2;
   let msg = "";
-  if (kind === "boost") { boostEnd = Math.max(boostEnd, performance.now()) + 15000; msg = "⚡ ×5 for 15s!"; }
-  else if (kind === "windfall") { const gain = Math.max(perSec() * 900, perClick() * 50, 500); earn(gain); msg = "💰 +" + fmt(gain); }
-  else if (kind === "upgrade") { const idxs = ups.map((_, i) => i).filter((i) => cost(i) <= Math.max(bank, 1) * 50); const i = idxs.length ? pick(idxs) : 0; bank += cost(i); owned[i] += 1; msg = "🎁 " + ups[i].name + "!"; }
-  else { boostEnd = Math.max(boostEnd, performance.now()) + 7777; msg = "✨ MEGA ×5 for 7.7s!"; }
+  const rewardMul = goldenRewardMul();
+  if (kind === "boost") { boostEnd = Math.max(boostEnd, performance.now()) + 15000 * rewardMul; msg = "⚡ ×5 for " + (15 * rewardMul).toFixed(1) + "s!"; }
+  else if (kind === "windfall") { const gain = Math.max(perSec() * 900, perClick() * 50, 500) * rewardMul; earn(gain); msg = "💰 +" + fmt(gain); }
+  else if (kind === "upgrade") { const idxs = ups.map((_, i) => i).filter((i) => cost(i) <= Math.max(bank, 1) * 50); const i = idxs.length ? pick(idxs) : 0; bank += cost(i) * rewardMul; owned[i] += 1; msg = "🎁 " + ups[i].name + "!"; }
+  else { boostEnd = Math.max(boostEnd, performance.now()) + 7777 * rewardMul; msg = "✨ MEGA ×5 for " + (7.777 * rewardMul).toFixed(1) + "s!"; }
   floatText(msg, x, y - 20, "hot");
   render(); save();
 }
@@ -2744,11 +2875,33 @@ function pumpBanner() {
 }
 
 function addPhoneNotif(kind, title) {
-  if (!phoneEl || !phoneNotifs) return;
   phoneNotifList.unshift({ kind, title });
   if (phoneNotifList.length > PHONE_NOTIF_MAX) phoneNotifList.length = PHONE_NOTIF_MAX;
+  renderNotifHistory();
   renderPhoneNotifs();
   peekPhone(4000);
+}
+
+function renderNotifHistory() {
+  const historyEl = document.getElementById("notifHistory");
+  const countEl = document.getElementById("notifCount");
+  if (!historyEl || !countEl) return;
+  historyEl.innerHTML = "";
+  if (!phoneNotifList.length) {
+    const empty = document.createElement("p");
+    empty.className = "notif-empty";
+    empty.textContent = "No notifications yet.";
+    historyEl.appendChild(empty);
+  } else {
+    phoneNotifList.forEach((n) => {
+      const item = document.createElement("div");
+      item.className = "notif-history-item";
+      item.innerHTML = `<span>${bannerIconFor(n.kind)}</span><b></b><small>${bannerLabelFor(n.kind)}</small>`;
+      item.querySelector("b").textContent = n.title || "Notification";
+      historyEl.appendChild(item);
+    });
+  }
+  countEl.textContent = phoneNotifList.length;
 }
 
 function renderPhoneNotifs() {
@@ -2766,7 +2919,7 @@ function renderPhoneNotifs() {
   else { phoneBadge.hidden = true; phoneEl.classList.remove("has-notif"); }
 }
 
-function clearPhoneNotifs() { phoneNotifList.length = 0; renderPhoneNotifs(); }
+function clearPhoneNotifs() { phoneNotifList.length = 0; renderNotifHistory(); renderPhoneNotifs(); }
 
 function peekPhone(ms) {
   if (!phoneEl) return;

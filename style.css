@@ -340,6 +340,8 @@ button { touch-action: manipulation; user-select: none; -webkit-user-select: non
 .bf-tag[data-form="default"] { color: #d48813; }
 .bf-tag[data-form="ghost"]   { color: #7b3dff; }
 .bf-tag[data-form="king"]    { color: #b06a00; }
+.rail .challenge .bf-tag { color: var(--ink); background: rgba(255,255,255,0.72); border-color: var(--ink); }
+.rail .challenge .form-hint { margin-top: 3px; font-size: 0.7rem; font-weight: 800; color: #6a2f00; }
 
 .reset { display: block; margin: 14px auto 0; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; text-decoration: underline; background: none; color: #6a6180; border: 0; box-shadow: none; transform: none; }
 .reset:hover { background: none; transform: none; }
@@ -913,6 +915,13 @@ body.boosted .frame { box-shadow: 10px 10px 0 var(--sun), 10px 10px 0 4px var(--
 }
 .stats-btn:hover { background: #ffe9a8; transform: none; }
 
+.notif-history { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.notif-history-item { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 2px 10px; padding: 10px 12px; color: var(--ink); background: #fff; border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 3px 0 var(--ink); }
+.notif-history-item > span { grid-row: span 2; display: grid; place-items: center; width: 30px; height: 30px; font-size: 1.25rem; background: var(--sun); border: 2px solid var(--ink); border-radius: 9px; }
+.notif-history-item b { min-width: 0; overflow: hidden; font-size: 0.9rem; text-overflow: ellipsis; white-space: nowrap; }
+.notif-history-item small { font-size: 0.68rem; font-weight: 800; opacity: 0.62; }
+.notif-empty { margin: 0; padding: 20px; text-align: center; font-weight: 800; opacity: 0.65; }
+
 /* number roll-up smoothing (no CSS needed, but keep the big stat readable) */
 .stats .big { font-variant-numeric: tabular-nums; }
 
@@ -1254,6 +1263,22 @@ body.wiping { opacity: 0; transition: opacity 0.45s ease-in; }
   .shop, .rail { min-height: calc(100vh - 48px); max-height: calc(100vh - 48px); overflow-y: auto; }
   .rail { position: sticky; top: 24px; }
 }
+@media (min-width: 1000px) and (max-height: 950px) {
+  .rail { gap: 6px; padding: 12px 12px 10px; }
+  .shop, .rail { max-height: calc(100vh - 32px); }
+  .rail-title { margin-bottom: 8px; padding-bottom: 6px; font-size: 1.45rem; }
+  .rail-live { gap: 3px; padding: 7px 9px; }
+  .class-badge, .daily-card { padding: 7px 9px; }
+  .class-badge > span { width: 30px; height: 30px; font-size: 1.1rem; }
+  .class-badge b { font-size: 0.78rem; }
+  .class-badge small, .daily-card em { font-size: 0.6rem; }
+  .daily-card b { font-size: 0.78rem; }
+  .daily-card span { margin-top: 2px; font-size: 0.68rem; }
+  .rail .ach-btn, .rail .stats-btn, .rail .challenge, .rail .prestige, .rail .reset { padding: 8px 10px; font-size: 0.86rem; }
+  .rail .reset { margin-top: 8px; }
+  .rail .reset::before { top: -7px; }
+  .rail .trophy-row { margin-top: 2px; padding: 5px; }
+}
 .offline, .panel-modal { background: rgba(6, 9, 18, 0.72); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: panelFade 0.25s ease-out; }
 .ocard, .panel-card { border-radius: 26px; box-shadow: var(--card-shadow); animation: panelPop 0.32s var(--press); }
 .ocard { padding: 30px 28px 26px; transform: none; }
@@ -1267,6 +1292,33 @@ body.wiping { opacity: 0; transition: opacity 0.45s ease-in; }
 .ach-btn, .stats-btn, .tab, .mute { transition: transform 0.12s, box-shadow 0.12s, background 0.15s; }
 @media (prefers-reduced-motion: reduce) {
   .in-left, .stats .big, .ocard .omoji, .ocard, .panel-card, .offline, .panel-modal, .silly.in .schat, .silly.in .poof, .silly.in .shead img, .schat.jolt, .sm, .sm.typing i { animation: none; }
+}
+
+@media (min-width: 1000px) {
+  .layout {
+    max-width: 1900px;
+    grid-template-columns: minmax(280px, 320px) minmax(560px, 1fr) minmax(400px, 480px);
+    gap: clamp(28px, 2.4vw, 48px);
+    padding: 24px 32px 34px;
+  }
+  .rail, .shop {
+    height: calc(100vh - 58px);
+    min-height: calc(100vh - 58px);
+    max-height: calc(100vh - 58px);
+    overflow-y: auto;
+  }
+  .rail {
+    gap: 12px;
+    padding: 18px 16px 22px;
+  }
+  .shop {
+    padding: 18px 20px 28px;
+  }
+  .rail .ach-btn, .rail .stats-btn, .rail .challenge, .rail .prestige, .rail .reset {
+    padding: 11px 14px;
+    font-size: 0.95rem;
+  }
+  .rail .reset { margin-top: 12px; }
 }
 
 .bubble { box-sizing: border-box; height: calc(3 * 1.35em + 56px); min-height: 0; overflow: hidden; line-height: 1.35; }
@@ -1483,14 +1535,18 @@ html {
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
+  cursor: grab;
+  touch-action: none;
 }
+.tree-stage.dragging { cursor: grabbing; }
 .tree-lines {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+  will-change: transform;
 }
 .tree-line {
   stroke-width: 3;
@@ -1511,7 +1567,7 @@ html {
 }
 @keyframes tree-line-flow { to { stroke-dashoffset: -32; } }
 
-.tree-nodes { position: absolute; inset: 0; }
+.tree-nodes { position: absolute; inset: 0; will-change: transform; }
 .tree-node {
   position: absolute;
   display: flex;
@@ -1529,7 +1585,7 @@ html {
   width: 120px;
   transition: filter 0.2s;
 }
-.tree-node:hover { background: none; transform: translate(-50%, -50%); filter: brightness(1.15); }
+.tree-node:hover { z-index: 100; background: none; transform: translate(-50%, -50%); filter: brightness(1.15); }
 .tree-node:active { transform: translate(-50%, -50%) scale(0.96); }
 
 /* --- diamond orb --- */
@@ -2370,3 +2426,9 @@ body.shake .vn { animation: shake 0.4s cubic-bezier(.36, .07, .19, .97); }
   z-index: 50;
   isolation: isolate;
 }
+
+/* Keep the tree responsive while dragging: static glow is cheaper than dozens of continuous animations. */
+.tree-sky::before,
+.tree-sky::after,
+.tree-line.ready,
+.tree-node.ready .tn-orb { animation: none; }
