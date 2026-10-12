@@ -7,6 +7,7 @@ let tutPaused = false;
 const STORY_KEY = "wisdom-clicker-story";
 const TUT_KEY = "wisdom-clicker-tutorial";
 const bannerQueue = [];
+const phoneNotifList = [];
 let bannerActive = false;
 
 fetch("wisdoms.txt")
@@ -2854,7 +2855,6 @@ var phoneNotifs = document.getElementById("phoneNotifs");
 var phoneBadge = document.getElementById("phoneBadge");
 
 const PHONE_NOTIF_MAX = 3;
-const phoneNotifList = [];
 
 function bannerIconFor(kind) { switch (kind) { case "silly": return "😼"; case "ach": return "🏆"; case "golden": return "🍊"; case "story": return "📖"; case "hareld": return "🐰"; case "transcend": return "✨"; case "daily": return "📅"; default: return "🔔"; } }
 function bannerLabelFor(kind) { switch (kind) { case "silly": return "Message · now"; case "ach": return "Achievement · now"; case "golden": return "Gift · now"; case "story": return "Story · now"; case "hareld": return "Hareld · now"; case "transcend": return "System · now"; case "daily": return "Daily Wisdom · now"; default: return "Notification · now"; } }
