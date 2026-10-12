@@ -309,14 +309,14 @@
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js", { scope: "./" }).catch((err) => {
+      navigator.serviceWorker.register("sw.js?v=2", { scope: "./" }).catch((err) => {
         console.warn("SW registration failed:", err);
       });
     });
   }
 </script>
 
-<script src="script.js?v=2" defer></script>
+<script src="script.js?v=3" defer></script>
 
   <!-- ============================================================ -->
   <!-- ================= DEV / TESTING PANEL ====================== -->

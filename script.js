@@ -7,7 +7,7 @@ let tutPaused = false;
 const STORY_KEY = "wisdom-clicker-story";
 const TUT_KEY = "wisdom-clicker-tutorial";
 const bannerQueue = [];
-const phoneNotifList = [];
+var phoneNotifList = [];
 let bannerActive = false;
 
 fetch("wisdoms.txt")
