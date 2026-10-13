@@ -166,22 +166,6 @@ No CI, no build, no workflow file. Static files in, static files out.
 
 ---
 
-## 🐛 Dev tools
-
-There's a small floating 🧪 button in the bottom-right corner of the screen. Click it for:
-
-- 🤖 Auto clicker
-- 😼 Force-trigger the Silly Cat
-- 🐰 Force-trigger Hareld
-- 💰 Instant wisdom injections
-- ✨ Free Insight
-- 🍊 Spawn a Golden Tangerine
-- 🧹 Wipe tutorial progress
-
-Useful for testing. If you ship this to real players, find the `<div class="devpanel">` block and delete it.
-
----
-
 ## 🌳 The Orchard (roadmap)
 
 Things that might grow here eventually:
